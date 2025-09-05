@@ -1,0 +1,18 @@
+/*
+=============================================================
+SInce you are ausing the azure studion , you will be using the folowingn cmmamands for youslef 
+=============================================================
+Script Purpose:
+    ...
+*/
+CREATE DATABASE DataWarehouse;
+GO
+USE DataWarehouse;
+GO
+SELECT name 
+FROM sys.schemas;
+GO
+CREATE SCHEMA Silver;
+GO
+CREATE SCHEMA gold;
+GO
