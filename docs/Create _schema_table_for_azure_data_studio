@@ -1,0 +1,151 @@
+/*
+=============================================================
+DataWarehouse Initialization Script
+=============================================================
+
+Purpose:
+- Creates the `DataWarehouse` database (if not exists).
+- Defines a schema called `bronze`.
+- Creates multiple tables inside `bronze`.
+- Demonstrates how to DROP & recreate tables using `IF OBJECT_ID`.
+
+Note:
+- This script is safe for practice. It uses `IF OBJECT_ID` checks before
+  dropping a table, so you can re-run it multiple times without errors.
+- Run in Azure Data Studio / SSMS connected to your SQL Server instance.
+=============================================================
+*/
+
+-------------------------------------------------------------
+-- Step 1: Ensure you are in the master DB
+-------------------------------------------------------------
+USE master;
+GO
+
+-- Create the DataWarehouse database if not exists
+IF NOT EXISTS (SELECT 1 FROM sys.databases WHERE name = 'DataWarehouse')
+    CREATE DATABASE DataWarehouse;
+GO
+
+-- Switch to DataWarehouse
+USE DataWarehouse;
+GO
+
+-------------------------------------------------------------
+-- Step 2: Create Schema (bronze)
+-------------------------------------------------------------
+-- Create schema if not exists
+IF NOT EXISTS (SELECT 1 FROM sys.schemas WHERE name = 'bronze')
+    EXEC('CREATE SCHEMA bronze');
+GO
+
+-------------------------------------------------------------
+-- Step 3: Create Tables in Bronze Schema
+-------------------------------------------------------------
+
+-- Customer Info Table
+IF OBJECT_ID('bronze.crm_cust_info', 'U') IS NOT NULL
+    DROP TABLE bronze.crm_cust_info;
+GO
+
+CREATE TABLE bronze.crm_cust_info (
+    cst_id INT,                                -- unique customer ID
+    cst_key VARCHAR(50) NOT NULL,              -- some kind of customer key
+    cst_firstname VARCHAR(100) NOT NULL,       -- first name
+    cst_lastname VARCHAR(100) NOT NULL,        -- last name
+    cst_marital_status VARCHAR(20),            -- e.g., Single, Married
+    cst_gndr CHAR(1),                          -- e.g., M/F
+    cst_create_date DATE NOT NULL              -- date the record was created
+);
+GO
+
+-- Product Info Table
+IF OBJECT_ID('bronze.crm_prd_info', 'U') IS NOT NULL
+    DROP TABLE bronze.crm_prd_info;
+GO
+
+CREATE TABLE bronze.crm_prd_info (
+    prd_id INT,                                -- unique product ID
+    prd_key VARCHAR(50) NOT NULL,              -- product key
+    prd_nm VARCHAR(200) NOT NULL,              -- product name
+    prd_cost DECIMAL(10,2) NOT NULL,           -- product cost
+    prd_line VARCHAR(100),                     -- product line/category
+    prd_start_dt DATE NOT NULL,                -- start/launch date
+    prd_end_dt DATE                            -- end/retire date
+);
+GO
+
+-- Sales Details Table
+IF OBJECT_ID('bronze.crm_sales_details_info', 'U') IS NOT NULL
+    DROP TABLE bronze.crm_sales_details_info;
+GO
+
+CREATE TABLE bronze.crm_sales_details_info (
+    sls_ord_num INT,                           -- unique order number
+    sls_prd_key VARCHAR(50) NOT NULL,          -- references product key
+    sls_cust_id INT NOT NULL,                  -- references customer id
+    sls_order_dt DATE NOT NULL,                -- order date
+    sls_ship_dt DATE,                          -- shipping date
+    sls_due_dt DATE,                           -- due date
+    sls_sales DECIMAL(12,2) NOT NULL,          -- total sales amount
+    sls_quantity INT NOT NULL,                 -- quantity of product sold
+    sls_price DECIMAL(10,2) NOT NULL           -- unit price
+);
+GO
+
+-- ERP Customer Table
+IF OBJECT_ID('bronze.erp_cust_az12', 'U') IS NOT NULL
+    DROP TABLE bronze.erp_cust_az12;
+GO
+
+CREATE TABLE bronze.erp_cust_az12 (
+    cid NVARCHAR(50),                          -- Customer ID
+    bdate DATE,                                -- Birth Date
+    gen NVARCHAR(50)                           -- Gender
+);
+GO
+
+-- ERP Location Table
+IF OBJECT_ID('bronze.erp_loc_a101', 'U') IS NOT NULL
+    DROP TABLE bronze.erp_loc_a101;
+GO
+
+CREATE TABLE bronze.erp_loc_a101 (
+    cid NVARCHAR(50),                          -- Customer ID
+    cntry NVARCHAR(100)                        -- Country
+);
+GO
+
+-- ERP Product/Asset Category Table
+IF OBJECT_ID('bronze.erp_px_cat_g1v2', 'U') IS NOT NULL
+    DROP TABLE bronze.erp_px_cat_g1v2;
+GO
+
+CREATE TABLE bronze.erp_px_cat_g1v2 (
+    id NVARCHAR(100),                          -- unique id for each asset
+    cat NVARCHAR(100),                         -- category (vehicle, machine, etc.)
+    subcat NVARCHAR(100),                      -- sub-category (car, truck, etc.)
+    maintenance NVARCHAR(200)                  -- maintenance details
+);
+GO
+
+-------------------------------------------------------------
+-- Step 4: Verify Schemas and Tables
+-------------------------------------------------------------
+
+-- Show schemas
+SELECT s.name AS SchemaName
+FROM sys.schemas s
+WHERE s.name = 'bronze';
+GO
+
+-- Show tables in bronze schema
+SELECT t.name AS TableName, s.name AS SchemaName
+FROM sys.tables t
+INNER JOIN sys.schemas s ON t.schema_id = s.schema_id
+WHERE s.name = 'bronze';
+GO
+
+-- Example: Select data from a table (empty at creation)
+SELECT * FROM bronze.crm_cust_info;
+GO
